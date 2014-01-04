@@ -78,7 +78,7 @@ namespace MailChimp.Tests
             ListResult lists = mc.GetLists();
             EmailParameter email = new EmailParameter()
             {
-                Email = "customeremail@righthere.com"
+                Email = "customeremail@righthere.com.au"
             };
 
             //  Act
