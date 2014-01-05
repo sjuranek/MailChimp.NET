@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using MailChimp.Campaigns;
 using MailChimp.Errors;
@@ -27,6 +28,12 @@ namespace MailChimp
         /// </summary>
         private string _httpsUrl = "https://{0}.api.mailchimp.com/2.0/{1}.json";
 
+        /// <summary>
+        /// The HTTP endpoint for the Export API v1.0
+        /// See http://apidocs.mailchimp.com/export/1.0/ for more information
+        /// </summary>
+        private string _httpExportApiUrl = "http://{0}.api.mailchimp.com/export/1.0/{1}";
+        
         /// <summary>
         /// The datacenter prefix.  This will be automatically determined
         /// based on your API key
@@ -637,6 +644,7 @@ namespace MailChimp
             //  Make the call:
             return MakeAPICall<ListResult>(apiAction, args);
         }
+ 
         /// <summary>
         /// Retrieve the interest groups for a list.
         /// </summary>
@@ -656,6 +664,193 @@ namespace MailChimp
 
             //  Make the call:
             return MakeAPICall<List<InterestGrouping>>(apiAction, args);
+        }
+
+        /// <summary>
+        /// Add a single Interest Group - if interest groups for the List are not yet enabled, adding the first group will automatically turn them on.
+        /// </summary>
+        /// <param name="listId">the list id to connect to (can be gathered using GetLists())</param>
+        /// <param name="groupName">the interest group to add - group names must be unique within a grouping</param>
+        /// <param name="groupingId">optional - optional The grouping to add the new group to - get using lists/interest-groupings() . If not supplied, the first grouping on the list is used.</param>
+        /// <returns></returns>
+        public bool AddListInterestGroup(string listId, string groupName, int? groupingId)
+        {
+
+            //  Our api action:
+            string apiAction = "lists/interest-group-add";
+
+            //  Create our arguments object:
+            dynamic args = new ExpandoObject();
+            args.apikey = this.APIKey;
+            args.id = listId;
+            args.group_name = groupName;
+
+            if (groupingId != null) args.grouping_id = groupingId;
+
+            //  Make the call:
+            return MakeAPICall<AddGroupResult>(apiAction, args).Complete;
+        }
+
+        /// <summary>
+        /// Delete a single Interest Group - if the last group for a list is deleted, this will also turn groups for the list off.
+        /// </summary>
+        /// <param name="listId">the list id to connect to (can be gathered using GetLists())</param>
+        /// <param name="groupName">the interest group to add - group names must be unique within a grouping</param>
+        /// <param name="groupingId">optional - optional The grouping to add the new group to - get using lists/interest-groupings() . If not supplied, the first grouping on the list is used.</param>
+        /// <returns></returns>
+        public bool DeleteListInterestGroup(string listId, string groupName, int? groupingId)
+        {
+
+            //  Our api action:
+            string apiAction = "lists/interest-group-del";
+
+            //  Create our arguments object:
+            object args = new
+            {
+                apikey = this.APIKey,
+                id = listId,
+                group_name = groupName,
+                grouping_id = groupingId
+            };
+
+            //  Make the call:
+            return MakeAPICall<AddGroupResult>(apiAction, args).Complete;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="listId"></param>
+        /// <param name="groups"></param>
+        /// <returns></returns>
+        public int AddListInterestGrouping(string listId, string[] groups)
+        {
+            string apiAction = "lists/interest-grouping-add";
+
+            object args = new
+            {
+                apikey = this.APIKey,
+                id = listId,
+                name = "Grouping",
+                type = "hidden",
+                groups = groups,
+            };
+
+            return MakeAPICall<AddGroupingResult>(apiAction, args).Id;
+
+        }
+
+        /// <summary>
+        /// Delete an existing Interest Grouping - this will permanently delete all contained interest groups and will remove those selections from all list members
+        /// </summary>
+        /// <param name="groupingId">the interest grouping id - get from lists/interest-groupings()</param>
+        /// <returns></returns>
+        public bool DeleteListInterestGrouping(int groupingId)
+        {
+            string apiAction = "lists/interest-grouping-del";
+
+            object args = new
+            {
+                apikey = this.APIKey,
+                grouping_id = groupingId
+            };
+
+            return MakeAPICall<DeleteGroupingResult>(apiAction, args).Complete;
+
+        }
+
+        /// <summary>
+        /// Update an existing Interest Grouping
+        /// </summary>
+        /// <param name="groupingId">the interest grouping id - get from lists/interest-groupings()</param>
+        /// <param name="name">The name of the field to update - either "name" or "type". Groups within the grouping should be manipulated using the standard listInterestGroup* methods</param>
+        /// <param name="value">The new value of the field. Grouping names must be unique - only "hidden" and "checkboxes" grouping types can be converted between each other.</param>
+        /// <returns></returns>
+        public bool UpdateListInterestGrouping(int groupingId, string name, string value)
+        {
+            string apiAction = "lists/interest-grouping-update";
+
+            object args = new
+            {
+                apikey = this.APIKey,
+                grouping_id = groupingId,
+                name = name,
+                value = value
+            };
+
+            return MakeAPICall<UpdateGroupingResult>(apiAction, args).Complete;
+
+        }
+
+        /// <summary>
+        /// Add a new merge tag to a given list
+        /// </summary>
+        /// <param name="listId">the list id to connect to. Get by calling lists/list()</param>
+        /// <param name="tag">The merge tag to add, e.g. FNAME. 10 bytes max, valid characters: "A-Z 0-9 _" no spaces, dashes, etc. Some tags and prefixes are reserved</param>
+        /// <param name="name">The long description of the tag being added, used for user displays - max 50 bytes.</param>
+        /// <param name="options">optional - optional Various options for this merge var</param>
+        /// <returns></returns>
+        public AddListMergeVarResult AddMergeVar(string listId, string tag, string name, MergeVarOptions options)
+        {
+            string apiAction = "lists/merge-var-add";
+
+            object args = new
+            {
+                apikey = this.APIKey,
+                id = listId,
+                tag = tag,
+                name = name,
+                options = options
+            };
+
+            return MakeAPICall<AddListMergeVarResult>(apiAction, args);
+
+        }
+
+        /// <summary>
+        /// Add a new merge tag to a given list
+        /// </summary>
+        /// <param name="listId">the list id to connect to. Get by calling lists/list()</param>
+        /// <param name="tag">The merge tag to add, e.g. FNAME. 10 bytes max, valid characters: "A-Z 0-9 _" no spaces, dashes, etc. Some tags and prefixes are reserved</param>
+        /// <returns></returns>
+        public bool DeleteMergeVar(string listId, string tag)
+        {
+            string apiAction = "lists/merge-var-del";
+
+            object args = new
+            {
+                apikey = this.APIKey,
+                id = listId,
+                tag = tag
+            };
+
+            return MakeAPICall<DeleteListMergeVarResult>(apiAction, args).Complete;
+
+        }
+
+        /// <summary>
+        /// Add a new merge tag to a given list
+        /// </summary>
+        /// <param name="listId">the list id to connect to. Get by calling lists/list()</param>
+        /// <param name="email">a struct with one of the following keys - failing to provide anything will produce an error relating to the email address. Providing multiples and will use the first we see in this same order.</param>
+        /// <param name="mergeVars">array of new field values to update the member with. See merge_vars in lists/subscribe() for details.</param>
+        /// <param name="emailType">optional - change the email type preference for the member ("html" or "text"). Leave blank to keep the existing preference (optional)</param>
+        /// <param name="replaceInterests">optional - flag to determine whether we replace the interest groups with the updated groups provided, or we add the provided groups to the member's interest groups (optional, defaults to true)</param>
+        /// <returns></returns>
+        public EmailParameter UpdateMember(string listId, EmailParameter email, Dictionary<string, string> mergeVars, string emailType, bool? replaceInterests)
+        {
+            string apiAction = "lists/update-member";
+
+            dynamic args = new ExpandoObject();
+            args.apikey = this.APIKey;
+            args.id = listId;
+            args.email = email;
+            args.merge_vars = mergeVars;
+            if (emailType != null) args.email_type = emailType;
+            if (replaceInterests != null) args.replace_interests = replaceInterests;
+
+            return MakeAPICall<EmailParameter>(apiAction, args);
+
         }
 
         /// <summary>
@@ -1247,6 +1442,38 @@ namespace MailChimp
 
         #endregion
 
+        #region API: Export
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="listId">the list id to get members from (can be gathered using lists())</param>
+        /// <param name="status">optional – the status to get members for - one of (subscribed, unsubscribed, cleaned), defaults to subscribed</param>
+        /// <param name="segment">optional – pull only a certain Segment of your list. For help with what this array should contain: see campaignSegmentTest(). It's also suggested that you test your options against campaignSegmentTest().</param>
+        /// <param name="since">optional – only return member whose data has changed since a GMT timestamp – in YYYY-MM-DD HH:mm:ss format</param>
+        /// <param name="hashed">optional – if, instead of full list data, you'd prefer a hashed list of email addresses, set this to the hashing algorithm you expect. Currently only "sha256" is supported.</param>
+        /// <returns></returns>
+        public string ExportList(string listId, string status, CampaignSegmentOptions segment, DateTime? since, string hashed)
+        {
+
+            //  Our api action:
+            string apiAction = "list";
+
+            //  Create our arguments object:
+            dynamic args = new ExpandoObject();
+            args.apikey = this.APIKey;
+            args.id = listId;
+            if (status != null) args.status = status;
+            if (segment != null) args.segment = segment;
+            if (since != null) args.since = since.Value.ToString("YYYY-MM-DD HH:mm:ss");
+            if (hashed != null) args.hashed = hashed;
+
+            //  Make the call:
+            return MakeExportAPICall<ExportListResult>(apiAction, args).Text;
+        }
+
+        #endregion
+
         #region Generic API calling method
 
         /// <summary>
@@ -1273,7 +1500,15 @@ namespace MailChimp
             try
             {
                 //  Call the API with the passed arguments:
-                var resultString = fullUrl.PostJsonToUrl(args);
+                var resultString = fullUrl.PostJsonToUrl(args, 
+                    req =>
+                        {
+                            
+                        },
+                    resp =>
+                        {
+                            
+                        });
                 results = resultString.Trim().FromJson<T>();
             }
             catch (Exception ex)
@@ -1291,6 +1526,48 @@ namespace MailChimp
             return results;
         }
 
+        /// <summary>
+        /// Generic API call.  Expects to be able to serialize the results
+        /// to the specified type
+        /// </summary>
+        /// <typeparam name="T">The specified results type</typeparam>
+        /// <param name="apiAction">The API action.  Example: helper/account-details</param>
+        /// <param name="args">The object that will be serialized as the JSON parameters to the API call</param>
+        /// <returns></returns>
+        private T MakeExportAPICall<T>(string apiAction, object args)
+        {
+            //  First, make sure the datacenter prefix is set properly.  
+            //  If it's not, throw an exception:
+            if (string.IsNullOrEmpty(_dataCenterPrefix))
+                throw new ApplicationException("API key not valid (datacenter not specified)");
+
+            //  Next, construct the full url based on the passed apiAction:
+            string fullUrl = string.Format(_httpExportApiUrl, _dataCenterPrefix, apiAction);
+
+            //  Initialize the results to return:
+            T results = default(T);
+
+            try
+            {
+                //  Call the API with the passed arguments:
+                var resultString = fullUrl.PostJsonToUrl(args);
+                results = resultString.Trim().FromJson<T>();
+            }
+            catch (Exception ex)
+            {
+                string errorBody = ex.GetResponseBody();
+
+                //  Serialize the error information:
+                ApiError apiError = errorBody.FromJson<ApiError>();
+
+                //  Throw a new exception based on this information:
+                throw new MailChimpAPIException(apiError.Error, ex, apiError);
+            }
+
+            //  Return the results
+            return results;
+        }
+        
         #endregion
 
     }

@@ -40,4 +40,39 @@ namespace MailChimp.Lists
             set;
         }
     }
+
+    [DataContract]
+    public class AddGroupingResult
+    {
+        [DataMember(Name = "id")]
+        public int Id { get; set; }
+    }
+
+    [DataContract]
+    public class UpdateGroupingResult
+    {
+        [DataMember(Name = "complete")]
+        public bool Complete { get; set; }
+    }
+
+    [DataContract]
+    public class DeleteGroupingResult
+    {
+        [DataMember(Name = "complete")]
+        public bool Complete { get; set; }
+    }
+
+    [DataContract]
+    public class AddGroupResult
+    {
+        [DataMember(Name = "complete")]
+        public bool Complete { get; set; }
+    }
+
+    [DataContract]
+    public class DeleteGroupResult
+    {
+        [DataMember(Name = "complete")]
+        public bool Complete { get; set; }
+    }
 }
