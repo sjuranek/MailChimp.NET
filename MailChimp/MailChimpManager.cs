@@ -32,7 +32,7 @@ namespace MailChimp
         /// The HTTP endpoint for the Export API v1.0
         /// See http://apidocs.mailchimp.com/export/1.0/ for more information
         /// </summary>
-        private string _httpExportApiUrl = "http://{0}.api.mailchimp.com/export/1.0/{1}";
+        private string _httpsExportApiUrl = "https://{0}.api.mailchimp.com/export/1.0/{1}";
         
         /// <summary>
         /// The datacenter prefix.  This will be automatically determined
@@ -1453,11 +1453,11 @@ namespace MailChimp
         /// <param name="since">optional – only return member whose data has changed since a GMT timestamp – in YYYY-MM-DD HH:mm:ss format</param>
         /// <param name="hashed">optional – if, instead of full list data, you'd prefer a hashed list of email addresses, set this to the hashing algorithm you expect. Currently only "sha256" is supported.</param>
         /// <returns></returns>
-        public string ExportList(string listId, string status, CampaignSegmentOptions segment, DateTime? since, string hashed)
+        public List<string[]> ExportList(string listId, string status, CampaignSegmentOptions segment, DateTime? since, string hashed)
         {
 
             //  Our api action:
-            string apiAction = "list";
+            string apiAction = "list/";
 
             //  Create our arguments object:
             dynamic args = new ExpandoObject();
@@ -1469,7 +1469,10 @@ namespace MailChimp
             if (hashed != null) args.hashed = hashed;
 
             //  Make the call:
-            return MakeExportAPICall<ExportListResult>(apiAction, args).Text;
+            string rawResult = MakeExportAPICall<string>(apiAction, args);
+
+            List<string[]> result = rawResult.Split('\n').Select(r => r.FromJsv<string[]>()).ToList();
+            return result;
         }
 
         #endregion
@@ -1542,7 +1545,7 @@ namespace MailChimp
                 throw new ApplicationException("API key not valid (datacenter not specified)");
 
             //  Next, construct the full url based on the passed apiAction:
-            string fullUrl = string.Format(_httpExportApiUrl, _dataCenterPrefix, apiAction);
+            string fullUrl = string.Format(_httpsExportApiUrl, _dataCenterPrefix, apiAction);
 
             //  Initialize the results to return:
             T results = default(T);

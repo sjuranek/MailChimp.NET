@@ -76,7 +76,36 @@ namespace MailChimp.Tests
         [TestMethod]
         public void ExportList_Successful()
         {
-            throw new NotImplementedException();
+            //  Arrange
+            MailChimpManager mc = new MailChimpManager(ApiKey);
+
+            // add test member
+
+            string testEmail = "test" + (new Random()).Next(99999) + "@micronet.com";
+            EmailParameter subscription = mc.Subscribe(ListId, new EmailParameter() {Email = testEmail}, sendWelcome: false, doubleOptIn: false);
+
+            try
+            {
+                // export list and check the new member is present
+
+                var result = mc.ExportList(ListId, null, null, null, null);
+
+                // should return at least header row
+                Assert.IsTrue(result.Any());
+
+                // in the header row find index of the field that contains Email address
+                int idx = Array.IndexOf(result[0], result[0].First(s => s.ToLower().Contains("email")));
+
+                // ensure the new member were exported
+                Assert.IsTrue(result.Skip(1).Any(r => r[idx] == testEmail));
+            }
+            finally
+            {
+                // remove test member
+                UnsubscribeResult rslt = mc.Unsubscribe(ListId, emailParam: new EmailParameter() { Email = testEmail },
+                                                        deleteMember: true, sendGoodbye: false, sendNotify: false);
+            }
+
         }
 
         [TestMethod]
