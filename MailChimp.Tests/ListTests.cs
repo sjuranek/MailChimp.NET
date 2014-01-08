@@ -25,6 +25,75 @@ namespace MailChimp.Tests
         }
 
         [TestMethod]
+        public void AddGrouping_Successful()
+        {
+            MailChimpManager mc = new MailChimpManager(TestGlobal.Test_APIKey);
+            string listId = string.Empty;
+
+            string defaultGroupingName = "MemberZone Groups";
+
+            var list = mc.GetLists();
+            var defaultList = list.Data.Where(x => x.Name == "ChamberMaster").FirstOrDefault();
+            if (defaultList != null)
+            {
+                listId = defaultList.Id;
+            }
+            else
+            {
+                throw new Exception("We need default list create called ChamberMaster or MemberZone");
+            }
+            int interestGroupId = 0;
+            List<InterestGrouping> groupList = new List<InterestGrouping>();
+            if (list.Data[0].Stats.GroupingCount > 0)
+            {
+                groupList = mc.GetListInterestGroupings(listId);
+                // Is the default group name exists?
+                var interestGrouping = groupList.Where(x => x.Name == defaultGroupingName).FirstOrDefault();
+                if (interestGrouping != null)
+                {
+                    interestGroupId = interestGrouping.Id;
+                }
+            }
+            if (interestGroupId == 0)
+            {
+                interestGroupId = mc.AddListInterestGrouping(listId, defaultGroupingName, new string[] { "_Default" });
+            }
+
+            List<string> groups = new List<string>();
+            var grouping = groupList.Where(x => x.Name == defaultGroupingName).FirstOrDefault();
+            for (int j = 0; j < 12; j++)
+            {
+                string groupName = "Group #" + j.ToString();
+                groups.Add(groupName);
+                // Check if it already exists                
+                if (grouping != null){
+                    var mailChimpGroup = grouping.GroupNames.Where(x => x.Name == groupName).FirstOrDefault();
+                    if (mailChimpGroup == null){
+                        mc.AddListInterestGroup(listId, groupName, interestGroupId);
+                    }
+                }                
+            }    
+       
+            // Get un-used groups and delete them
+            var toDelete = grouping.GroupNames.Where(x => !groups.Contains(x.Name)).ToList();
+            foreach(var groupToDel in toDelete){
+                mc.DeleteListInterestGroup(listId, groupToDel.Name, interestGroupId);
+            }
+
+            // Add a subscriber
+            List<Grouping> interests = new List<Grouping>();
+            interests.Add(new Grouping(){ Id = interestGroupId, GroupNames = groups.Take(3).ToList()});
+            mc.Subscribe(listId, new EmailParameter(){ Email="scott.juranek@micronetonline.com"},                
+                new MergeVar(){ Groupings = interests },
+                "html", false,true,true,false
+                );
+            
+
+            //mc.UpdateListInterestGrouping()
+
+        }
+
+        [TestMethod]
         public void GetAbuseReport_Successful()
         {
             //  Arrange

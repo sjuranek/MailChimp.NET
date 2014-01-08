@@ -11,15 +11,16 @@ namespace MailChimp.Tests
     [TestClass]
     public class MicroNetTests
     {
-        private const string ApiKey = "7b1d619ad246e121ab2c91195bc1521a-us3"; // for user moltestuser2
-        private const string ListId = "169573aab7"; // Test list #1
+        //private const string ApiKey = "7b1d619ad246e121ab2c91195bc1521a-us3"; // for user moltestuser2
+        //private const string ListId = "169573aab7"; // Test list #1
 
         [TestMethod]
         public void AddRemoveMergeVar()
         {
             //  Arrange
-            MailChimpManager mc = new MailChimpManager(ApiKey);
-
+            MailChimpManager mc = new MailChimpManager(TestGlobal.Test_APIKey);
+            var list = mc.GetLists();
+            string ListId = list.Data.Where(x => x.Name == "ChamberMaster").FirstOrDefault().Id;
             //  Act
             AddListMergeVarResult result = mc.AddMergeVar(ListId, "MYVAR", "My VAR", null);
 
@@ -33,17 +34,21 @@ namespace MailChimp.Tests
         public void AddRemoveInterestGrouping_Successful()
         {
             //  Arrange
-            MailChimpManager mc = new MailChimpManager(ApiKey);
+            MailChimpManager mc = new MailChimpManager(TestGlobal.Test_APIKey);
+            var list = mc.GetLists();
+            string ListId = list.Data.Where(x => x.Name == "ChamberMaster").FirstOrDefault().Id;
 
             //  Create
-            int groupingId = mc.AddListInterestGrouping(ListId, new string[]{"default1" });
+            int groupingId = mc.AddListInterestGrouping(ListId, "test group", new string[]{"default1" });
 
             //  Update
-            bool result = mc.UpdateListInterestGrouping(groupingId, "name", "newName");
+            bool result = mc.UpdateListInterestGrouping(groupingId, "name", "Auto-Created - Don't Delete");
             Assert.IsTrue(result);
 
+            mc.AddListInterestGroup(ListId, "Group 1", groupingId);
+
             //  Delete
-            result = mc.DeleteListInterestGrouping(groupingId);
+            //result = mc.DeleteListInterestGrouping(groupingId);
             Assert.IsTrue(result);
 
         }
@@ -52,10 +57,12 @@ namespace MailChimp.Tests
         public void AddRemoveInterestGroup_Successful()
         {
             //  Arrange
-            MailChimpManager mc = new MailChimpManager(ApiKey);
+            MailChimpManager mc = new MailChimpManager(TestGlobal.Test_APIKey);
+            var list = mc.GetLists();
+            string ListId = list.Data.Where(x => x.Name == "ChamberMaster").FirstOrDefault().Id;
 
             //  Add grouping
-            int groupingId = mc.AddListInterestGrouping(ListId, new string[] { "default2" });
+            int groupingId = mc.AddListInterestGrouping(ListId, "Test Group", new string[] { "default2" });
 
             //  Add groups
             bool result = mc.AddListInterestGroup(ListId, "SomeGroup1", groupingId);
@@ -77,7 +84,9 @@ namespace MailChimp.Tests
         public void ExportList_Successful()
         {
             //  Arrange
-            MailChimpManager mc = new MailChimpManager(ApiKey);
+            MailChimpManager mc = new MailChimpManager(TestGlobal.Test_APIKey);
+            var list = mc.GetLists();
+            string ListId = list.Data.Where(x => x.Name == "ChamberMaster").FirstOrDefault().Id;
 
             // add test member
 
@@ -112,7 +121,9 @@ namespace MailChimp.Tests
         public void UpdateMember_Successful()
         {
             //  Arrange
-            MailChimpManager mc = new MailChimpManager(ApiKey);
+            MailChimpManager mc = new MailChimpManager(TestGlobal.Test_APIKey);
+            var list = mc.GetLists();
+            string ListId = list.Data.Where(x => x.Name == "ChamberMaster").FirstOrDefault().Id;
 
             //  Create merge var "Company Name"
             mc.AddMergeVar(ListId, "COMPNAME", "Company Name", null);

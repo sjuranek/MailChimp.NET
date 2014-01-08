@@ -723,7 +723,7 @@ namespace MailChimp
         /// <param name="listId"></param>
         /// <param name="groups"></param>
         /// <returns></returns>
-        public int AddListInterestGrouping(string listId, string[] groups)
+        public int AddListInterestGrouping(string listId, string groupingName, string[] groups)
         {
             string apiAction = "lists/interest-grouping-add";
 
@@ -731,7 +731,7 @@ namespace MailChimp
             {
                 apikey = this.APIKey,
                 id = listId,
-                name = "Grouping",
+                name = groupingName,
                 type = "hidden",
                 groups = groups,
             };
@@ -739,6 +739,25 @@ namespace MailChimp
             return MakeAPICall<AddGroupingResult>(apiAction, args).Id;
 
         }
+
+        public int AddListInterestGroups(string listId, string groupingName, List<InterestGrouping.InnerGroup> groups)
+        {
+
+            string apiAction = "lists/interest-grouping-add";
+
+            object args = new
+            {
+                apikey = this.APIKey,
+                id = listId,
+                name = groupingName,
+                type = "hidden",
+                groups = groups,
+            };
+
+            InterestGroupingResult res = MakeAPICall<InterestGroupingResult>(apiAction, args);
+            return res.Id;
+        }
+
 
         /// <summary>
         /// Delete an existing Interest Grouping - this will permanently delete all contained interest groups and will remove those selections from all list members
